@@ -30,9 +30,14 @@ df_pair.drop('holiday', axis=1, inplace=True)
 df_pair.drop('workingday', axis=1, inplace=True)
 # print(df_pair.head())
 
-# This part only runs in debug for some reason
-#ax = sns.pairplot(df_pair, hue="season", height=1.5, aspect=0.7, palette=sns.color_palette('bright'))
+# Increase the number of colors in the palette
+num_colors = len(df_pair['season'].unique())  # Number of unique seasons
+palette = sns.color_palette('bright', n_colors=num_colors)
 
+# Plot the pairplot with updated palette
+ax = sns.pairplot(df_pair, hue="season", height=2, aspect=0.7, palette=palette)
+plt.savefig('pair_plot_no_debug.png')
+# plt.show()
 # Following a website for this part:
 # https://www.analyticsvidhya.com/blog/2021/06/data-cleaning-using-pandas/
 
@@ -61,11 +66,11 @@ df_norm.columns = ['holiday', 'workingday', 'temp', 'atemp', 'humidity', 'windsp
 print(df_norm['workingday'])
 
 fig, axes = plt.subplots(1, 2, figsize=(20, 16))
-sns.boxplot(data=(df_norm['workingday'], df_norm['count']), ax=axes[0,0])
-sns.boxplot(data=(df_norm['holiday'], df_norm['count']), ax=axes[0,1])
+sns.boxplot(data=(df_norm['workingday'], df_norm['count']), ax=axes[0])
+sns.boxplot(data=(df_norm['holiday'], df_norm['count']), ax=axes[1])
 #sns.boxplot(data=df_norm, x='season', y='count', ax=axes[1, 0])
 #sns.boxplot(data=df_norm, x='weather', y='count', ax=axes[1, 1])
-plt.show()
+plt.savefig('normalization.png')
 
 
 
