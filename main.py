@@ -1,6 +1,7 @@
 import seaborn as sns
 import pandas as pd
 from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 
 # To stop output from being truncated
@@ -19,6 +20,11 @@ df = pd.read_csv("bike_rental_data.csv")
 df['datetime'] = pd.to_datetime(df['datetime'])
 df['hour'] = df['datetime'].dt.hour
 df.drop('datetime', axis=1, inplace=True)
+
+# Count is both of these combined, so maybe we should drop them?
+# df.drop('registered', axis=1, inplace=True)
+# df.drop('casual', axis=1, inplace=True)
+
 print(df.head())
 
 # Remove boolean values for pairplot because they aren't very helpful
@@ -33,7 +39,7 @@ palette = sns.color_palette('bright', n_colors=num_colors)
 # Plot the pairplot with updated palette
 ax = sns.pairplot(df_pair, hue="season", height=2, aspect=0.7, palette=palette)
 plt.savefig('pair_plot_no_debug.png')
-# plt.show()
+
 
 # Following a website for this part:
 # https://www.analyticsvidhya.com/blog/2021/06/data-cleaning-using-pandas/
@@ -56,16 +62,48 @@ df_final = pd.DataFrame(norm.fit_transform(df))
 df_final.columns = ['season', 'holiday', 'workingday', 'weather', 'temp', 'atemp', 'humidity', 'windspeed', 'casual',
                     'registered', 'count', 'hour']
 
-# Assigning labels for Season and Weather
-df_final['season'] = df_final['season'].map({0: 'spring', (1/3): 'summer', (2/3): 'fall', 1: 'winter'})
-df_final['weather'] = df_final['weather'].map({0: 'clear', (1/3): 'mist', (2/3): 'light rain', 1: 'heavy rain'})
+# Assigning labels for Season and Weather (messes up PCA, I'll figure it out later)
+#df_final['season'] = df_final['season'].map({0: 'spring', (1/3): 'summer', (2/3): 'fall', 1: 'winter'})
+#df_final['weather'] = df_final['weather'].map({0: 'clear', (1/3): 'mist', (2/3): 'light rain', 1: 'heavy rain'})
 
 fig, axes = plt.subplots(1, 2, figsize=(20, 16))
 sns.boxplot(data=(df_final['workingday'], df_final['count']), ax=axes[0])
 sns.boxplot(data=(df_final['holiday'], df_final['count']), ax=axes[1])
-#sns.boxplot(data=df_norm, x='season', y='count', ax=axes[1, 0])
-#sns.boxplot(data=df_norm, x='weather', y='count', ax=axes[1, 1])
 plt.savefig('normalization.png')
+
+# ******************************
+# FEATURE SELECTION
+# ******************************
+
+# Remove outliers (we can scrap this if we need to)
+q1 = df_final['count'].quantile(0.25)
+q3 = df_final['count'].quantile(0.75)
+iqr = q3-q1
+df_final = df_final[~((df_final['count'] < q1-(1.5 * iqr)) | (df_final['count'] > q3+(1.5 * iqr)))]
+
+# Assigning X and Y for PCA and LDA
+x_pca = df_final.drop('count', axis=1)
+y_pca = df_final['count']
+
+# PCA
+pca = PCA()
+x_pca = pca.fit(x_pca)
+ev = pca.explained_variance_ratio_
+
+# Explained Variance Plot - Iris
+plt.figure(figsize=(8, 6))
+plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], list(ev*100), label='Principal Components', color='c')
+plt.legend()
+plt.xlabel('Principal Components')
+pc = []
+for i in range(11):
+    pc.append('PC-' + str(i + 1))
+plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], pc, fontsize=8, rotation=30)
+plt.ylabel('Variance Ratio')
+plt.title('Variance Ratio of Bike Rental Dataset')
+plt.savefig('PCA_class_variance')
+# plt.show()
+
 
 
 
