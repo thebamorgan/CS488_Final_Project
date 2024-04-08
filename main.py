@@ -121,6 +121,27 @@ palette = sns.color_palette('bright', n_colors=num_colors)
 #ax = sns.pairplot(df_pair, height=2, aspect=0.7, palette=palette)
 #plt.savefig('pair_plot_no_debug.png')
 
+# ******************************
+# CORRELATION MATRIX
+# ******************************
+
+# Visualize features as a heatmap
+cor_eff=df.corr()
+plt.figure(figsize=(6,6))
+sns.heatmap(cor_eff,linecolor="white",linewidths=1,annot=True)
+plt.savefig("full_corr_matrix")
+
+# Plot the lower half of the correlation matrix
+fig, ax = plt.subplots(figsize=(6,6))
+# Compute the correlation matrix
+mask=np.zeros_like(cor_eff)
+plt.savefig("lower_corr_matrix")
+
+# mask = 0: display the correlation matrix
+# mask = 1: display the unique lower triangular values
+#mask[np.triu_indices_from(mask)] = 0
+mask[np.triu_indices_from(mask)] = 1
+sns.heatmap(cor_eff,linecolor="white",linewidths=1,mask=mask,ax=ax,annot=True)
 
 # Following a website for this part:
 # https://www.analyticsvidhya.com/blog/2021/06/data-cleaning-using-pandas/
@@ -188,13 +209,13 @@ plt.ylabel('Variance Ratio')
 plt.title('PCA Variance Ratio of Bike Rental Dataset')
 plt.savefig('PCA_class_variance')
 # plt.show()
-'''
+
 # PCA Dimensionality Reduction
 pca = PCA()
 pc = pca.fit_transform(x_pca)
 x1 = x_pca.transpose()
 X_pca = np.matmul(pc, x1)
-'''
+
 
 # Reformat reduced data
 X_pca_df = pd.DataFrame(data=pc)
