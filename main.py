@@ -4,7 +4,14 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import learning_curve
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.svm import SVC
+
 
 def plot_learning_curve(est_arr, X, y, ylim=None, cv=None, n_jobs=1, train_sizes=np.linspace(.1, 1.0, 5), title=" "):
     """
@@ -68,7 +75,11 @@ def plot_learning_curve(est_arr, X, y, ylim=None, cv=None, n_jobs=1, train_sizes
     s_train.set_ylabel("Training Recall Accuracy")
     s_train.set_xlabel("% of Training Examples")
 
-    for color, i, label in zip(colors, [0, 1, 2], est_arr):
+    class_num = []
+    for i in range(len(colors)):
+        class_num.append(i)
+
+    for color, i, label in zip(colors, class_num, est_arr):
         s_test.plot(
             [10, 20, 30, 40, 50], test[i], color=color, label=label, marker='o'
         )
@@ -141,7 +152,7 @@ print(df.describe())
 norm = MinMaxScaler()
 df_final = pd.DataFrame(norm.fit_transform(df))
 df_final.columns = ['temp', 'atemp', 'humidity', 'windspeed', 'casual', 'registered', 'count', 'hour']
-df_final = pd.concat(objs=(df_final, target), axis=1)
+#df_final = pd.concat(objs=(df_final, target), axis=1)
 
 # This is kinda useless now
 '''
@@ -166,6 +177,7 @@ outliers = df_final.index[((df_final['count'] < q1-(1.5 * iqr)) | (df_final['cou
 target = target.drop(index=outliers, axis=0)
 df_final = df_final.drop(index=outliers, axis=0)
 
+'''
 # Assigning X and Y for PCA
 x_pca = df_final
 y_pca = target['season']
@@ -181,25 +193,26 @@ plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], list(ev * 100), label='Principa
 plt.legend()
 plt.xlabel('Principal Components')
 pc = []
-for i in range(8):
+for i in range(12):
     pc.append('PC-' + str(i + 1))
-plt.xticks([1, 2, 3, 4, 5, 6, 7, 8], pc, fontsize=8, rotation=30)
+plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], pc, fontsize=8, rotation=30)
 plt.ylabel('Variance Ratio')
 plt.title('PCA Variance Ratio of Bike Rental Dataset')
 plt.savefig('PCA_class_variance')
 # plt.show()
-'''
+
 # PCA Dimensionality Reduction
 pca = PCA()
 pc = pca.fit_transform(x_pca)
+
 x1 = x_pca.transpose()
 X_pca = np.matmul(pc, x1)
-'''
+
 
 # Reformat reduced data
 X_pca_df = pd.DataFrame(data=pc)
 target_df = pd.DataFrame(data=target['season'])
-X_pca_df.columns = ['PC-1', 'PC-2', 'PC-3', 'PC-4', 'PC-5', 'PC-6', 'PC-7', 'PC-8']
+X_pca_df.columns = ['PC-1', 'PC-2', 'PC-3', 'PC-4', 'PC-5', 'PC-6', 'PC-7', 'PC-8', 'PC-9', 'PC-10', 'PC-11', 'PC-12']
 
 # 2D PCA Reduction Plot
 fig = plt.figure(figsize=(10, 10))
@@ -208,15 +221,16 @@ ax.set_xlabel('PC-1', fontsize=15)
 ax.set_ylabel('PC-2', fontsize=15)
 ax.set_title('PCA on Bike Rental Dataset', fontsize=20)
 class_num = [1, 2, 3, 4]
-colors = ['r', 'k', 'b', 'g']
+colors = ['turquoise', 'gold', 'darkorange', 'mediumpurple']
 for target, color in zip(class_num, colors):
     indicesToKeep = y_pca == target #This doesn't make sense anymore?
-    ax.scatter(X_pca_df.loc[indicesToKeep, 0], #UGGGHHH
-               X_pca_df.loc[indicesToKeep, 1],
+    ax.scatter(X_pca_df.loc[indicesToKeep, 'PC-1'], #UGGGHHH
+               X_pca_df.loc[indicesToKeep, 'PC-2'],
                c=color, s=9)
 ax.legend(class_num)
 ax.grid()
 plt.show()
+'''
 
 # Count over a day for working days vs not
 #sns.lineplot(data=df_final, x='hour', y='count', hue='workingday')
@@ -264,4 +278,28 @@ for t, color in zip(class_num, colors):
 ax.legend(['Spring', 'Summer', 'Fall', 'Winter'])
 ax.grid()
 plt.savefig('LDA_scatterplot_season')
+#plt.show()
+
+# Supervised Classification w/o reduction
+classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
+                     "SVM - Poly": (SVC(kernel="poly", random_state=1), "darkorange"),
+                     "SVM - Linear": (SVC(kernel="linear"), "blue"),
+                     "Gaussian NB": (GaussianNB(), "purple"),
+                     "Logistic Regression": (LogisticRegression(max_iter=1000, random_state=1), "red"),
+                     "Random Forest": (RandomForestClassifier(random_state=1), "gold"),
+                     "kNN": (KNeighborsClassifier(n_neighbors=5), "gray")}
+
+
+# **WARNING**, this section of the code can take up to 30 min to run
+fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['season'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
+                   title="Supervised Classification of Bike Rental Dataset Without Dimensionality Reduction")
 plt.show()
+plt.savefig('classification_accuracy')
+
+
+# LDA
+fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda, y=target['season'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
+                    title="Supervised Classification of Bike Rental Dataset With LDA Dimensionality Reduction")
+plt.show()
+plt.savefig('classification_accuracy_LDA')
+
