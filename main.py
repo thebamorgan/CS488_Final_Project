@@ -6,6 +6,82 @@ from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import MinMaxScaler
 
+def plot_learning_curve(est_arr, X, y, ylim=None, cv=None, n_jobs=1, train_sizes=np.linspace(.1, 1.0, 5), title=" "):
+    """
+    **Found on sklearn website and modified**
+    https://scikit-learn.org/0.15/auto_examples/plot_learning_curve.html
+
+    Generate a simple plot of the test and traning learning curve.
+
+    Parameters
+    ----------
+    estimator : object type that implements the "fit" and "predict" methods
+        An object of that type which is cloned for each validation.
+
+    title : string
+        Title for the chart.
+
+    X : array-like, shape (n_samples, n_features)
+        Training vector, where n_samples is the number of samples and
+        n_features is the number of features.
+
+    y : array-like, shape (n_samples) or (n_samples, n_features), optional
+        Target relative to X for classification or regression;
+        None for unsupervised learning.
+
+    ylim : tuple, shape (ymin, ymax), optional
+        Defines minimum and maximum yvalues plotted.
+
+    cv : integer, cross-validation generator, optional
+        If an integer is passed, it is the number of folds (defaults to 3).
+        Specific cross-validation objects can be passed, see
+        sklearn.cross_validation module for the list of possible objects
+
+    n_jobs : integer, optional
+        Number of jobs to run in parallel (default 1).
+    """
+    test = []
+    train = []
+    colors = []
+
+    # Loop through each estimator and apply the learning curve function on them
+    for c in est_arr:
+        estimator = est_arr[c][0]
+        color = est_arr[c][1]
+        train_sizes, train_scores, test_scores = learning_curve(estimator, X, y, cv=cv, n_jobs=n_jobs,
+                                                                train_sizes=train_sizes, shuffle=True, verbose=1)
+        train_scores_mean = np.mean(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test.append(test_scores_mean * 100)
+        train.append(train_scores_mean * 100)
+        colors.append(color)
+
+    # Plot the learning curve scores for each estimator as a line graph
+    fig, (s_test, s_train) = plt.subplots(1, 2)
+    fig.set(figheight=6, figwidth=10)
+    s_test.set_box_aspect(1)
+    s_test.set_title("Model Evaluation - Cross Validation Accuracy")
+    s_test.set_ylabel("Overall Classification Accuracy")
+    s_test.set_xlabel("% of Training Examples")
+    s_train.set_box_aspect(1)
+    s_train.set_title("Model Evaluation - Training Accuracy")
+    s_train.set_ylabel("Training Recall Accuracy")
+    s_train.set_xlabel("% of Training Examples")
+
+    for color, i, label in zip(colors, [0, 1, 2], est_arr):
+        s_test.plot(
+            [10, 20, 30, 40, 50], test[i], color=color, label=label, marker='o'
+        )
+
+        s_train.plot(
+            [10, 20, 30, 40, 50], train[i], color=color, label=label, marker='o'
+        )
+
+    s_train.legend(loc="best")
+    s_test.legend(loc="best")
+    fig.suptitle(title, y=0.92)
+    return plt, train_scores
+
 # To stop output from being truncated
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -90,7 +166,6 @@ outliers = df_final.index[((df_final['count'] < q1-(1.5 * iqr)) | (df_final['cou
 target = target.drop(index=outliers, axis=0)
 df_final = df_final.drop(index=outliers, axis=0)
 
-'''
 # Assigning X and Y for PCA
 x_pca = df_final
 y_pca = target['season']
@@ -102,7 +177,7 @@ ev = pca.explained_variance_ratio_
 
 # Explained Variance Plot - PCA
 plt.figure(figsize=(8, 6))
-plt.bar([1, 2, 3, 4, 5, 6, 7, 8], list(ev * 100), label='Principal Components', color='c')
+plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], list(ev * 100), label='Principal Components', color='c')
 plt.legend()
 plt.xlabel('Principal Components')
 pc = []
@@ -113,17 +188,18 @@ plt.ylabel('Variance Ratio')
 plt.title('PCA Variance Ratio of Bike Rental Dataset')
 plt.savefig('PCA_class_variance')
 # plt.show()
-
+'''
 # PCA Dimensionality Reduction
 pca = PCA()
 pc = pca.fit_transform(x_pca)
 x1 = x_pca.transpose()
 X_pca = np.matmul(pc, x1)
+'''
 
 # Reformat reduced data
-X_pca_df = pd.DataFrame(data=X_pca)
+X_pca_df = pd.DataFrame(data=pc)
 target_df = pd.DataFrame(data=target['season'])
-#X_pca_df.columns = ['PC-1', 'PC-2', 'PC-3', 'PC-4', 'PC-5', 'PC-6', 'PC-7', 'PC-8']
+X_pca_df.columns = ['PC-1', 'PC-2', 'PC-3', 'PC-4', 'PC-5', 'PC-6', 'PC-7', 'PC-8']
 
 # 2D PCA Reduction Plot
 fig = plt.figure(figsize=(10, 10))
@@ -141,10 +217,10 @@ for target, color in zip(class_num, colors):
 ax.legend(class_num)
 ax.grid()
 plt.show()
-'''
 
-sns.lineplot(data=df_final, x='hour', y='count', hue='workingday')
-plt.show()
+# Count over a day for working days vs not
+#sns.lineplot(data=df_final, x='hour', y='count', hue='workingday')
+#plt.show()
 
 # Assigning X and Y for LDA
 x_lda = df_final
@@ -178,39 +254,14 @@ fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(1, 1, 1)
 ax.set_title('LDA on Bike Rental Dataset - Season', fontsize=20)
 class_num = [1, 2, 3, 4]
-colors = ['r', 'k', 'b', 'g']
+colors = ['turquoise', 'gold', 'darkorange', 'mediumpurple']
 #markerm = ['o', 'o', 'o', 'o', 'o', 'o', 'o', '+', '+', '+', '+', '+', '+', '+', '*', '*']
 for t, color in zip(class_num, colors):
     indicesToKeep = y_lda == t
     ax.scatter(x_lda[indicesToKeep, 0],
                x_lda[indicesToKeep, 1],
                c=color, s=9)
-ax.legend(class_num)
+ax.legend(['Spring', 'Summer', 'Fall', 'Winter'])
 ax.grid()
 plt.savefig('LDA_scatterplot_season')
-# plt.show()
-
-# LDA Dimensionality Reduction - weather
-x_lda = df_final
-y_lda = target['weather']
-lda = LinearDiscriminantAnalysis(n_components=2)
-x_lda = lda.fit_transform(X=x_lda, y=y_lda)
-
-# Plot LDA scatterplot
-fig = plt.figure(figsize=(10, 10))
-ax = fig.add_subplot(1, 1, 1)
-ax.set_title('LDA on Bike Rental Dataset - Weather', fontsize=20)
-class_num = [1, 2, 3, 4]
-colors = ['r', 'k', 'b', 'g']
-#markerm = ['o', 'o', 'o', 'o', 'o', 'o', 'o', '+', '+', '+', '+', '+', '+', '+', '*', '*']
-for t, color in zip(class_num, colors):
-    indicesToKeep = y_lda == t
-    ax.scatter(x_lda[indicesToKeep, 0],
-               x_lda[indicesToKeep, 1],
-               c=color, s=9)
-ax.legend(class_num)
-ax.grid()
-plt.savefig('LDA_scatterplot_weather')
 plt.show()
-
-
