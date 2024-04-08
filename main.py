@@ -25,7 +25,7 @@ df.drop('datetime', axis=1, inplace=True)
 
 # These are the possible targets because they are labeled
 target = np.array((df['season'], df['holiday'], df['workingday'], df['weather']))
-target = target.reshape(-1, 4)
+target = np.swapaxes(target, 0, 1)
 target = pd.DataFrame(target, columns=['season', 'holiday', 'workingday', 'weather'])
 df.drop(['season', 'holiday', 'workingday', 'weather'], axis=1, inplace=True)
 
@@ -33,16 +33,9 @@ df.drop(['season', 'holiday', 'workingday', 'weather'], axis=1, inplace=True)
 #target['season'] = target['season'].map({1: 'spring', 2: 'summer', 3: 'fall', 4: 'winter'})
 #target['weather'] = target['weather'].map({1: 'clear', 2: 'mist', 4: 'light rain', 4: 'heavy rain'})
 
-# Count is both of these combined, so maybe we should drop them?
-# df.drop('registered', axis=1, inplace=True)
-# df.drop('casual', axis=1, inplace=True)
-
 print(df.head())
 
-# Remove boolean values for pairplot because they aren't very helpful
 df_pair = df.copy()
-# df_pair.drop('holiday', axis=1, inplace=True)
-# df_pair.drop('workingday', axis=1, inplace=True)
 
 # Increase the number of colors in the palette
 num_colors = len(target['season'].unique())  # Number of unique seasons
@@ -72,11 +65,17 @@ print(df.describe())
 norm = MinMaxScaler()
 df_final = pd.DataFrame(norm.fit_transform(df))
 df_final.columns = ['temp', 'atemp', 'humidity', 'windspeed', 'casual', 'registered', 'count', 'hour']
+df_final = pd.concat(objs=(df_final, target), axis=1)
 
 # This is kinda useless now
-# fig, axes = plt.subplots(1, 2, figsize=(20, 16))
-# sns.boxplot(data=(df_final['workingday'], target['count']), ax=axes[0])
-# sns.boxplot(data=(df_final['holiday'], target['count']), ax=axes[1])
+'''
+fig, axes = plt.subplots(2, 2, figsize=(20, 16))
+sns.boxplot(data=df_final, x='workingday', y='count', ax=axes[0, 0])
+sns.boxplot(data=df_final, x='holiday', y='count', ax=axes[0, 1])
+sns.boxplot(data=df_final, x='season', y='count', ax=axes[1, 0])
+sns.boxplot(data=df_final, x='weather', y='count', ax=axes[1, 1])
+plt.show()
+'''
 # plt.savefig('normalization.png')
 
 # ******************************
@@ -91,6 +90,7 @@ outliers = df_final.index[((df_final['count'] < q1-(1.5 * iqr)) | (df_final['cou
 target = target.drop(index=outliers, axis=0)
 df_final = df_final.drop(index=outliers, axis=0)
 
+'''
 # Assigning X and Y for PCA
 x_pca = df_final
 y_pca = target['season']
@@ -118,11 +118,12 @@ plt.savefig('PCA_class_variance')
 pca = PCA()
 pc = pca.fit_transform(x_pca)
 x1 = x_pca.transpose()
-X_pca = np.matmul(x1, pc)
+X_pca = np.matmul(pc, x1)
 
 # Reformat reduced data
 X_pca_df = pd.DataFrame(data=X_pca)
-X_pca_df.columns = ['PC-1', 'PC-2', 'PC-3', 'PC-4', 'PC-5', 'PC-6', 'PC-7', 'PC-8']
+target_df = pd.DataFrame(data=target['season'])
+#X_pca_df.columns = ['PC-1', 'PC-2', 'PC-3', 'PC-4', 'PC-5', 'PC-6', 'PC-7', 'PC-8']
 
 # 2D PCA Reduction Plot
 fig = plt.figure(figsize=(10, 10))
@@ -133,12 +134,16 @@ ax.set_title('PCA on Bike Rental Dataset', fontsize=20)
 class_num = [1, 2, 3, 4]
 colors = ['r', 'k', 'b', 'g']
 for target, color in zip(class_num, colors):
-    indicesToKeep = y_pca == target
-    ax.scatter(X_pca_df.loc[indicesToKeep, 'PC-1'], #UGGGHHH
-               X_pca_df.loc[indicesToKeep, 'PC-2'],
+    indicesToKeep = y_pca == target #This doesn't make sense anymore?
+    ax.scatter(X_pca_df.loc[indicesToKeep, 0], #UGGGHHH
+               X_pca_df.loc[indicesToKeep, 1],
                c=color, s=9)
 ax.legend(class_num)
 ax.grid()
+plt.show()
+'''
+
+sns.lineplot(data=df_final, x='hour', y='count', hue='workingday')
 plt.show()
 
 # Assigning X and Y for LDA
