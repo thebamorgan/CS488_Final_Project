@@ -148,7 +148,7 @@ plt.show()
 
 # Assigning X and Y for LDA
 x_lda = df_final
-y_lda = target['season'] # I don't think count should be the Y, It should probably be weather or season
+y_lda = target['season']
 
 # LDA
 lda = LinearDiscriminantAnalysis()
@@ -157,13 +157,13 @@ ev = lda.explained_variance_ratio_
 
 # Explained Variance Plot - LDA
 plt.figure(figsize=(8, 6))
-plt.bar([1, 2, 3, 4], list(ev * 100), label='Linear Discriminants', color='c')
+plt.bar([1, 2, 3], list(ev * 100), label='Linear Discriminants', color='c')
 plt.legend()
 plt.xlabel('Linear Discriminants')
 ld = []
-for i in range(4):
+for i in range(3):
     ld.append('LD-' + str(i + 1))
-plt.xticks([1, 2, 3, 4], ld, fontsize=8, rotation=30)
+plt.xticks([1, 2, 3], ld, fontsize=8, rotation=30)
 plt.ylabel('Variance Ratio')
 plt.title('LDA Variance Ratio of Bike Rental Dataset')
 plt.savefig('LDA_class_variance')
@@ -180,16 +180,37 @@ ax.set_title('LDA on Bike Rental Dataset - Season', fontsize=20)
 class_num = [1, 2, 3, 4]
 colors = ['r', 'k', 'b', 'g']
 #markerm = ['o', 'o', 'o', 'o', 'o', 'o', 'o', '+', '+', '+', '+', '+', '+', '+', '*', '*']
-for target, color in zip(class_num, colors):
-    indicesToKeep = y_lda == target
+for t, color in zip(class_num, colors):
+    indicesToKeep = y_lda == t
     ax.scatter(x_lda[indicesToKeep, 0],
                x_lda[indicesToKeep, 1],
                c=color, s=9)
 ax.legend(class_num)
 ax.grid()
-plt.savefig('LDA_scatterplot')
+plt.savefig('LDA_scatterplot_season')
 # plt.show()
 
+# LDA Dimensionality Reduction - weather
+x_lda = df_final
+y_lda = target['weather']
+lda = LinearDiscriminantAnalysis(n_components=2)
+x_lda = lda.fit_transform(X=x_lda, y=y_lda)
 
+# Plot LDA scatterplot
+fig = plt.figure(figsize=(10, 10))
+ax = fig.add_subplot(1, 1, 1)
+ax.set_title('LDA on Bike Rental Dataset - Weather', fontsize=20)
+class_num = [1, 2, 3, 4]
+colors = ['r', 'k', 'b', 'g']
+#markerm = ['o', 'o', 'o', 'o', 'o', 'o', 'o', '+', '+', '+', '+', '+', '+', '+', '*', '*']
+for t, color in zip(class_num, colors):
+    indicesToKeep = y_lda == t
+    ax.scatter(x_lda[indicesToKeep, 0],
+               x_lda[indicesToKeep, 1],
+               c=color, s=9)
+ax.legend(class_num)
+ax.grid()
+plt.savefig('LDA_scatterplot_weather')
+plt.show()
 
 
