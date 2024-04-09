@@ -6,7 +6,8 @@ from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import learning_curve
+from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.model_selection import learning_curve, train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import MinMaxScaler
@@ -311,16 +312,39 @@ classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
                      "kNN": (KNeighborsClassifier(n_neighbors=5), "gray")}
 
 
-# **WARNING**, this section of the code can take up to 30 min to run
+# **WARNING**, this section of the code can take up to 10 min to run
 fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['season'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
                    title="Supervised Classification of Bike Rental Dataset Without Dimensionality Reduction")
-plt.show()
+# plt.show()
 plt.savefig('classification_accuracy')
 
 
 # LDA
 fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda, y=target['season'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
-                    title="Supervised Classification of Bike Rental Dataset With LDA Dimensionality Reduction")
-plt.show()
+                   title="Supervised Classification of Bike Rental Dataset With LDA Dimensionality Reduction")
+#plt.show()
 plt.savefig('classification_accuracy_LDA')
+
+# Using classification data, test best classifier (Random Forest)
+x_train, x_test, y_train, y_test = train_test_split(x_lda, y_lda, train_size=0.2, random_state=1)
+rf = RandomForestClassifier(random_state=1)
+rf.fit(x_train, y_train)
+# Get predicted values to calculate RMSE and MSE
+y_pred = rf.predict(x_test)
+
+print("\nTraining Results")
+print("-----------------------------------------------------")
+print("Coefficient of Determination:", round(r2_score(y_test, y_pred), 4))
+print("RMSE:", round(np.sqrt(mean_squared_error(y_test, y_pred)), 4))
+print("MSE:", round(mean_squared_error(y_test, y_pred), 4))
+
+# Predict new data (I want to be able to predict count instead of season, hmm...)
+pred = rf.predict(x_test)
+labels = {1: 'Spring', 2: 'Summer', 3: 'Fall', 4: 'Winter'}
+print("\nTraining Predicted Values")
+print("-----------------------------------------------------")
+print("Predicted Season:", labels.get(pred[0]))
+print("Actual Season:", labels.get(y_test.values[0]))
+
+
 
