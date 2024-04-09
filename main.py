@@ -23,8 +23,8 @@ def plot_learning_curve(est_arr, X, y, ylim=None, cv=None, n_jobs=1, train_sizes
 
     Parameters
     ----------
-    estimator : object type that implements the "fit" and "predict" methods
-        An object of that type which is cloned for each validation.
+    est_arr : dict with structure {"classifier label": (classifier function, color)}
+        Estimators to be used on the data. Color corresponds to the estimator's color on the graph
 
     title : string
         Title for the chart.
