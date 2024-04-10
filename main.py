@@ -137,6 +137,7 @@ palette = sns.color_palette('bright', n_colors=num_colors)
 # CORRELATION MATRIX
 # ******************************
 
+'''
 # Visualize features as a heatmap
 cor_eff=df.corr()
 plt.figure(figsize=(6,6))
@@ -154,7 +155,7 @@ plt.savefig("lower_corr_matrix")
 #mask[np.triu_indices_from(mask)] = 0
 mask[np.triu_indices_from(mask)] = 1
 sns.heatmap(cor_eff,linecolor="white",linewidths=1,mask=mask,ax=ax,annot=True)
-
+'''
 # Following a website for this part:
 # https://www.analyticsvidhya.com/blog/2021/06/data-cleaning-using-pandas/
 
@@ -169,6 +170,15 @@ print("Sum:", df.duplicated().sum())  # Also zero
 
 # Let's look at the distribution of the data
 print(df.describe())
+
+df['count'].plot.hist(bins=10, grid=True, legend=None)
+plt.title("Distribution of Bike Rental Counts per Hour")
+plt.xlabel("Bikes Rented per Hour")
+plt.show()
+
+target['count'] = pd.cut(x=df['count'], bins=[0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+                         labels=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+print(target['count'].value_counts())
 
 # Normalization
 norm = MinMaxScaler()
@@ -198,6 +208,9 @@ iqr = q3-q1
 outliers = df_final.index[((df_final['count'] < q1-(1.5 * iqr)) | (df_final['count'] > q3+(1.5 * iqr)))].tolist()
 target = target.drop(index=outliers, axis=0)
 df_final = df_final.drop(index=outliers, axis=0)
+
+# Might also need to drop registered and casual
+df_final.drop(['count', 'casual', 'registered'], axis=1, inplace=True)
 
 '''
 # Assigning X and Y for PCA
@@ -260,7 +273,7 @@ plt.show()
 
 # Assigning X and Y for LDA
 x_lda = df_final
-y_lda = target['season']
+y_lda = target['count']
 
 # LDA
 lda = LinearDiscriminantAnalysis()
@@ -269,17 +282,17 @@ ev = lda.explained_variance_ratio_
 
 # Explained Variance Plot - LDA
 plt.figure(figsize=(8, 6))
-plt.bar([1, 2, 3], list(ev * 100), label='Linear Discriminants', color='c')
+plt.bar([1, 2, 3, 4, 5], list(ev * 100), label='Linear Discriminants', color='c')
 plt.legend()
 plt.xlabel('Linear Discriminants')
 ld = []
-for i in range(3):
+for i in range(5):
     ld.append('LD-' + str(i + 1))
-plt.xticks([1, 2, 3], ld, fontsize=8, rotation=30)
+plt.xticks([1, 2, 3, 4, 5], ld, fontsize=8, rotation=30)
 plt.ylabel('Variance Ratio')
-plt.title('LDA Variance Ratio of Bike Rental Dataset')
-plt.savefig('LDA_class_variance')
-# plt.show()
+plt.title('LDA Variance Ratio of Bike Rental Dataset - Count')
+plt.savefig('LDA_class_variance_count')
+plt.show()
 
 # LDA Dimensionality Reduction
 lda = LinearDiscriminantAnalysis(n_components=2)
@@ -288,19 +301,19 @@ x_lda = lda.fit_transform(X=x_lda, y=y_lda)
 # Plot LDA scatterplot
 fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(1, 1, 1)
-ax.set_title('LDA on Bike Rental Dataset - Season', fontsize=20)
-class_num = [1, 2, 3, 4]
-colors = ['turquoise', 'gold', 'darkorange', 'mediumpurple']
+ax.set_title('LDA on Bike Rental Dataset - Count', fontsize=20)
+class_num = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+colors = ['r', 'b', 'g', 'y', 'orange', 'c', 'k', 'pink', 'brown', 'gray']
 #markerm = ['o', 'o', 'o', 'o', 'o', 'o', 'o', '+', '+', '+', '+', '+', '+', '+', '*', '*']
 for t, color in zip(class_num, colors):
     indicesToKeep = y_lda == t
     ax.scatter(x_lda[indicesToKeep, 0],
                x_lda[indicesToKeep, 1],
                c=color, s=9)
-ax.legend(['Spring', 'Summer', 'Fall', 'Winter'])
+ax.legend(['0 to 100', '100 to 200', '200 to 300', '300 to 400', '400 to 500', '500 to 600', '600 to 700', '700 to 800', '800 to 900', '900 to 1000'])
 ax.grid()
-plt.savefig('LDA_scatterplot_season')
-#plt.show()
+plt.savefig('LDA_scatterplot_count')
+plt.show()
 
 # Supervised Classification w/o reduction
 classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
@@ -313,17 +326,17 @@ classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
 
 
 # **WARNING**, this section of the code can take up to 10 min to run
-fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['season'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
+fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
                    title="Supervised Classification of Bike Rental Dataset Without Dimensionality Reduction")
-# plt.show()
-plt.savefig('classification_accuracy')
+plt.show()
+plt.savefig('classification_accuracy_count')
 
 
 # LDA
-fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda, y=target['season'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
+fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
                    title="Supervised Classification of Bike Rental Dataset With LDA Dimensionality Reduction")
-#plt.show()
-plt.savefig('classification_accuracy_LDA')
+plt.show()
+plt.savefig('classification_accuracy_LDA_count')
 
 # Using classification data, test best classifier (Random Forest)
 x_train, x_test, y_train, y_test = train_test_split(x_lda, y_lda, train_size=0.2, random_state=1)
