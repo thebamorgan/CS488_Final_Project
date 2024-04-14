@@ -128,8 +128,8 @@ num_colors = len(target['season'].unique())  # Number of unique seasons
 palette = sns.color_palette('bright', n_colors=num_colors)
 
 # Plot the pairplot with updated palette
-#ax = sns.pairplot(df_pair, height=2, aspect=0.7, palette=palette)
-#plt.savefig('pair_plot_no_debug.png')
+ax = sns.pairplot(df_pair, height=2, aspect=0.7, palette=palette)
+plt.savefig('pair_plot_no_debug.png')
 
 # ******************************
 # CORRELATION MATRIX
@@ -177,7 +177,7 @@ plt.xlabel("Bikes Rented per Hour")
 plt.savefig("count_histogram")
 plt.show()
 
-
+# Divide count column so it can be used as a label
 target['count'] = pd.cut(x=df['count'], bins=[0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000], labels=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 print(target['count'].value_counts())
 
@@ -185,17 +185,6 @@ print(target['count'].value_counts())
 norm = MinMaxScaler()
 df_final = pd.DataFrame(norm.fit_transform(df))
 df_final.columns = ['temp', 'atemp', 'humidity', 'windspeed', 'casual', 'registered', 'count', 'hour']
-
-# This is kinda useless now
-'''
-fig, axes = plt.subplots(2, 2, figsize=(20, 16))
-sns.boxplot(data=df_final, x='workingday', y='count', ax=axes[0, 0])
-sns.boxplot(data=df_final, x='holiday', y='count', ax=axes[0, 1])
-sns.boxplot(data=df_final, x='season', y='count', ax=axes[1, 0])
-sns.boxplot(data=df_final, x='weather', y='count', ax=axes[1, 1])
-plt.show()
-plt.savefig('normalization.png')
-'''
 
 # ******************************
 # FEATURE SELECTION
@@ -210,69 +199,15 @@ target = target.drop(index=outliers, axis=0)
 df_final = df_final.drop(index=outliers, axis=0)
 df_final = pd.concat(objs=[df_final, target['season'], target['holiday'], target['workingday'], target['weather']], axis=1)
 
-# Might also need to drop registered and casual
-#df_final.drop(['count', 'casual', 'registered'], axis=1, inplace=True)
+# Drop target values
 df_final.drop(['count'], axis=1, inplace=True)
-
-# PCA now works but it's weird
-'''
-# Assigning X and Y for PCA
-x_pca = df_final
-y_pca = np.array(target['count'])
-
-# PCA
-pca = PCA()
-pca = pca.fit(x_pca)
-ev = pca.explained_variance_ratio_
-
-# Explained Variance Plot - PCA
-plt.figure(figsize=(8, 6))
-plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], list(ev * 100), label='Principal Components', color='c')
-plt.legend()
-plt.xlabel('Principal Components')
-pc = []
-for i in range(11):
-    pc.append('PC-' + str(i + 1))
-plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], pc, fontsize=8, rotation=30)
-plt.ylabel('Variance Ratio')
-plt.title('PCA Variance Ratio of Bike Rental Dataset')
-plt.savefig('PCA_class_variance')
-# plt.show()
-
-# PCA Dimensionality Reduction
-pca = PCA(n_components=2)
-pc = pca.fit_transform(x_pca)
-
-x1 = x_pca.transpose()
-X_pca = np.matmul(x1, pc)
-
-
-# Reformat reduced data
-X_pca_df = pd.DataFrame(data=pc)
-#X_pca_df.columns = ['PC-1', 'PC-2', 'PC-3', 'PC-4', 'PC-5', 'PC-6', 'PC-7', 'PC-8', 'PC-9', 'PC-10', 'PC-11']
-
-# 2D PCA Reduction Plot
-fig = plt.figure(figsize=(10, 10))
-ax = fig.add_subplot(1, 1, 1)
-ax.set_xlabel('PC-1', fontsize=15)
-ax.set_ylabel('PC-2', fontsize=15)
-ax.set_title('PCA on Bike Rental Dataset - Count', fontsize=20)
-class_num = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-colors = ['r', 'b', 'g', 'y', 'orange', 'c', 'k', 'pink', 'brown', 'gray']
-for t, color in zip(class_num, colors):
-    indicesToKeep = y_pca == t
-    indicesToKeep = np.where(indicesToKeep)[0]
-    ax.scatter(X_pca_df.iloc[indicesToKeep, 0],
-               X_pca_df.iloc[indicesToKeep, 1],
-               c=color, s=9)
-ax.legend(['0 to 100', '100 to 200', '200 to 300', '300 to 400', '400 to 500', '500 to 600', '600 to 700', '700 to 800','800 to 900', '900 to 1000'])
-ax.grid()
-plt.show()
-'''
 
 # Assigning X and Y for LDA
 x_lda = df_final
 y_lda = target['count']
+
+df_noreg = df_final.drop(['registered', 'casual'], axis=1)
+x_lda_noreg = df_noreg
 
 # LDA
 lda = LinearDiscriminantAnalysis()
@@ -289,7 +224,7 @@ for i in range(6):
     ld.append('LD-' + str(i + 1))
 plt.xticks([1, 2, 3, 4, 5, 6], ld, fontsize=8, rotation=30)
 plt.ylabel('Variance Ratio')
-plt.title('LDA Variance Ratio of Bike Rental Dataset - Count')
+plt.title('LDA Variance Ratio of Yulu Dataset')
 plt.savefig('LDA_class_variance_count')
 #plt.show()
 
@@ -298,9 +233,10 @@ lda = LinearDiscriminantAnalysis(n_components=2)
 x_lda = lda.fit_transform(X=x_lda, y=y_lda)
 
 # Plot LDA scatterplot
+plt.clf()
 fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(1, 1, 1)
-ax.set_title('LDA on Bike Rental Dataset - Count', fontsize=20)
+ax.set_title('LDA on Yulu Dataset', fontsize=20)
 class_num = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 colors = ['r', 'b', 'g', 'y', 'orange', 'c', 'k', 'pink', 'brown', 'gray']
 for t, color in zip(class_num, colors):
@@ -308,10 +244,32 @@ for t, color in zip(class_num, colors):
     ax.scatter(x_lda[indicesToKeep, 0],
                x_lda[indicesToKeep, 1],
                c=color, s=9)
-ax.legend(['0 to 100', '100 to 200', '200 to 300', '300 to 400', '400 to 500', '500 to 600', '600 to 700', '700 to 800','800 to 900', '900 to 1000'])
+ax.legend(['0 to 100', '100 to 200', '200 to 300', '300 to 400', '400 to 500', '500 to 600', '600 to 700', '700 to 800',
+           '800 to 900', '900 to 1000'], title="Number of Bikes Rented")
 ax.grid()
 plt.savefig('LDA_scatterplot_count')
-#plt.show()
+plt.show()
+
+lda = LinearDiscriminantAnalysis(n_components=2)
+x_lda_noreg = lda.fit_transform(X=x_lda_noreg, y=y_lda)
+
+# Plot LDA scatterplot no registered and casual
+plt.clf()
+fig = plt.figure(figsize=(10, 10))
+ax = fig.add_subplot(1, 1, 1)
+ax.set_title('LDA on Yulu Dataset without Registered and Casual', fontsize=20)
+class_num = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+colors = ['r', 'b', 'g', 'y', 'orange', 'c', 'k', 'pink', 'brown', 'gray']
+for t, color in zip(class_num, colors):
+    indicesToKeep = y_lda == t
+    ax.scatter(x_lda_noreg[indicesToKeep, 0],
+               x_lda_noreg[indicesToKeep, 1],
+               c=color, s=9)
+ax.legend(['0 to 100', '100 to 200', '200 to 300', '300 to 400', '400 to 500', '500 to 600', '600 to 700', '700 to 800',
+           '800 to 900', '900 to 1000'], title="Number of Bikes Rented")
+ax.grid()
+plt.savefig('LDA_scatterplot_count_noreg')
+plt.show()
 
 # Supervised Classification w/o reduction
 classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
@@ -325,31 +283,39 @@ classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
 
 # **WARNING**, this section of the code can take up to 10 min to run
 fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
-                   title="Supervised Classification of Bike Rental Dataset Without Dimensionality Reduction")
-plt.show()
+                   title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction")
 plt.savefig('classification_accuracy_count')
+plt.show()
 
 # LDA
 fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
-                   title="Supervised Classification of Bike Rental Dataset With LDA Dimensionality Reduction")
-plt.show()
+                   title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction")
 plt.savefig('classification_accuracy_LDA_count')
+plt.show()
 
-# Using classification data, test best classifier (Random Forest)
-x_train, x_test, y_train, y_test = train_test_split(x_lda, y_lda, train_size=0.4, random_state=1, shuffle=True)
+# Without registered and casual
+fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_noreg, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
+                   title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction, without Registered and Casual")
+plt.savefig('classification_accuracy_count_no_reg')
+plt.show()
 
-# According to our classification accuracy charts, random forest performed the best
-rf = RandomForestClassifier(random_state=1)
-rf.fit(x_train, y_train)
-# rbf = 98% at 0.5 training
-#rbf = SVC(kernel="rbf", random_state=1)
-#rbf.fit(x_train, y_train)
+# LDA
+fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda_noreg, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
+                   title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction, without Registered and Casual")
+plt.savefig('classification_accuracy_LDA_count_no_reg')
+plt.show()
+
+
+# Using classification data, test best classifier
+x_train, x_test, y_train, y_test = train_test_split(x_lda, y_lda, train_size=0.5, random_state=1, shuffle=True)
+
+rbf = SVC(kernel="rbf", random_state=1)
+rbf.fit(x_train, y_train)
 
 # Get predicted values to calculate RMSE and MSE
-y_pred = rf.predict(x_test)
-#y_pred = rbf.predict(x_test)
+y_pred = rbf.predict(x_test)
 
-print("\nTraining Results")
+print("\nTraining Results with Registered and Casual")
 print("-----------------------------------------------------")
 print("Coefficient of Determination:", round(r2_score(y_test, y_pred), 4))
 print("RMSE:", round(np.sqrt(mean_squared_error(y_test, y_pred)), 4))
@@ -364,7 +330,35 @@ for i in range(len(y_test.values)):
 # Calculate accuracy of predictions
 accuracy = (correct_count/len(y_test.values)) * 100
 
-print("Actual Prediction Accuracy: ", round(accuracy, 2), "%")
+print("Prediction Accuracy: ", round(accuracy, 2), "%")
+
+# No registered and casual
+# Using classification data, test best classifier
+x_train, x_test, y_train, y_test = train_test_split(x_lda_noreg, y_lda, train_size=0.2, random_state=1, shuffle=True)
+
+rbf = SVC(kernel="rbf", random_state=1)
+rbf.fit(x_train, y_train)
+
+# Get predicted values to calculate RMSE and MSE
+y_pred = rbf.predict(x_test)
+
+print("\n\nTraining Results without Registered and Casual")
+print("-----------------------------------------------------")
+print("Coefficient of Determination:", round(r2_score(y_test, y_pred), 4))
+print("RMSE:", round(np.sqrt(mean_squared_error(y_test, y_pred)), 4))
+print("MSE:", round(mean_squared_error(y_test, y_pred), 4))
+
+
+# Check predictions
+correct_count = 0
+for i in range(len(y_test.values)):
+    if y_test.values[i] == y_pred[i]:
+        correct_count += 1
+
+# Calculate accuracy of predictions
+accuracy = (correct_count/len(y_test.values)) * 100
+
+print("Prediction Accuracy: ", round(accuracy, 2), "%")
 
 
 
