@@ -140,22 +140,24 @@ cor_eff = df.corr()
 plt.figure(figsize=(9, 9))
 sns.heatmap(cor_eff, linecolor="white", linewidths=1, annot=True)
 plt.savefig("full_corr_matrix")
-plt.show()
+#plt.show()
 
 # Plot the lower half of the correlation matrix
 fig, ax = plt.subplots(figsize=(9, 9))
+#plt.show()
 
 # Lower correlation matrix not showing up
 # Compute the correlation matrix
 mask = np.zeros_like(cor_eff)
-plt.savefig("lower_corr_matrix")
-plt.show()
+#plt.show()
 
 # mask = 0: display the correlation matrix
 # mask = 1: display the unique lower triangular values
 #mask[np.triu_indices_from(mask)] = 0
-#mask[np.triu_indices_from(mask)] = 1
-#sns.heatmap(cor_eff, linecolor="white", linewidths=1, mask=mask, ax=ax, annot=True)
+mask[np.triu_indices_from(mask)] = 1
+sns.heatmap(cor_eff, linecolor="white", linewidths=1, mask=mask, ax=ax, annot=True)
+plt.savefig("lower_corr_matrix")
+plt.show()
 
 # Print total of invalid data per column
 print("\nInvalid Data:")
