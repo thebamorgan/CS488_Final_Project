@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import mutual_info_regression
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.model_selection import learning_curve, train_test_split
@@ -109,6 +110,7 @@ df = pd.read_csv("bike_rental_data.csv")
 # Convert date time into a structure where it is easier to extract data
 df['datetime'] = pd.to_datetime(df['datetime'])
 df['hour'] = df['datetime'].dt.hour
+df['month'] = df['datetime'].dt.month
 df.drop('datetime', axis=1, inplace=True)
 
 # Also try using casual or registered columns instead of count
@@ -128,8 +130,8 @@ num_colors = len(target['season'].unique())  # Number of unique seasons
 palette = sns.color_palette('bright', n_colors=num_colors)
 
 # Plot the pairplot with updated palette
-ax = sns.pairplot(df_pair, height=2, aspect=0.7, palette=palette)
-plt.savefig('pair_plot_no_debug.png')
+#ax = sns.pairplot(df_pair, height=2, aspect=0.7)
+#plt.savefig('pair_plot_no_debug.png')
 
 # ******************************
 # CORRELATION MATRIX
@@ -186,7 +188,7 @@ print(target['count'].value_counts())
 # Normalization
 norm = MinMaxScaler()
 df_final = pd.DataFrame(norm.fit_transform(df))
-df_final.columns = ['temp', 'atemp', 'humidity', 'windspeed', 'casual', 'registered', 'count', 'hour']
+df_final.columns = ['temp', 'atemp', 'humidity', 'windspeed', 'casual', 'registered', 'count', 'hour', 'month']
 
 # ******************************
 # FEATURE SELECTION
@@ -196,6 +198,7 @@ df_final.columns = ['temp', 'atemp', 'humidity', 'windspeed', 'casual', 'registe
 q1 = df_final['count'].quantile(0.25)
 q3 = df_final['count'].quantile(0.75)
 iqr = q3-q1
+
 outliers = df_final.index[((df_final['count'] < q1-(1.5 * iqr)) | (df_final['count'] > q3+(1.5 * iqr)))].tolist()
 target = target.drop(index=outliers, axis=0)
 df_final = df_final.drop(index=outliers, axis=0)
@@ -204,11 +207,26 @@ df_final = pd.concat(objs=[df_final, target['season'], target['holiday'], target
 # Drop target values
 df_final.drop(['count'], axis=1, inplace=True)
 
+discrete_features = df_final.dtypes == int
+scores = mutual_info_regression(df_final, target['count'], discrete_features=discrete_features, random_state=42)
+scores = pd.Series(scores, name='Mutual Information', index=df_final.columns)
+# scores = scores.sort_values(ascending=False)
+scores = scores.sort_values(ascending=True)
+width = np.arange(len(scores))
+ticks = list(scores.index)
+plt.figure(figsize=(8, 6))
+plt.barh(width, scores)
+plt.yticks(width, ticks)
+plt.title("Yulu Dataset Mutual Information Scores")
+plt.savefig("mutual_info_scores")
+plt.show()
+
 # Assigning X and Y for LDA
 x_lda = df_final
 y_lda = target['count']
 
 df_noreg = df_final.drop(['registered', 'casual'], axis=1)
+df_noreg.drop(['holiday', 'workingday', 'weather', 'windspeed'], axis=1, inplace=True)
 x_lda_noreg = df_noreg
 
 # LDA
@@ -282,7 +300,6 @@ classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
                      "Random Forest": (RandomForestClassifier(random_state=1), "gold"),
                      "kNN": (KNeighborsClassifier(n_neighbors=5), "gray")}
 
-
 # **WARNING**, this section of the code can take up to 10 min to run
 fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
                    title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction")
@@ -306,7 +323,6 @@ fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda_noreg,
                    title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction, without Registered and Casual")
 plt.savefig('classification_accuracy_LDA_count_no_reg')
 plt.show()
-
 
 # Using classification data, test best classifier
 x_train, x_test, y_train, y_test = train_test_split(x_lda, y_lda, train_size=0.5, random_state=1, shuffle=True)
