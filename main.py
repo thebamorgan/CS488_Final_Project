@@ -231,7 +231,7 @@ x_lda_noreg = df_noreg
 
 # LDA
 lda = LinearDiscriminantAnalysis()
-lda = lda.fit(X=x_lda, y=y_lda)
+lda = lda.fit(X=x_lda_noreg, y=y_lda)
 ev = lda.explained_variance_ratio_
 
 # Explained Variance Plot - LDA
@@ -277,7 +277,7 @@ x_lda_noreg = lda.fit_transform(X=x_lda_noreg, y=y_lda)
 plt.clf()
 fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(1, 1, 1)
-ax.set_title('LDA on Yulu Dataset without Registered and Casual', fontsize=20)
+ax.set_title('LDA on Yulu Dataset', fontsize=20)
 class_num = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 colors = ['r', 'b', 'g', 'y', 'orange', 'c', 'k', 'pink', 'brown', 'gray']
 for t, color in zip(class_num, colors):
@@ -299,7 +299,7 @@ classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
                      "Logistic Regression": (LogisticRegression(max_iter=1000, random_state=1), "red"),
                      "Random Forest": (RandomForestClassifier(random_state=1), "gold"),
                      "kNN": (KNeighborsClassifier(n_neighbors=5), "gray")}
-
+'''
 # **WARNING**, this section of the code can take up to 10 min to run
 fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
                    title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction")
@@ -311,16 +311,16 @@ fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda, y=tar
                    title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction")
 plt.savefig('classification_accuracy_LDA_count')
 plt.show()
-
+'''
 # Without registered and casual
 fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_noreg, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
-                   title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction, without Registered and Casual")
+                   title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction")
 plt.savefig('classification_accuracy_count_no_reg')
 plt.show()
 
 # LDA
 fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda_noreg, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
-                   title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction, without Registered and Casual")
+                   title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction")
 plt.savefig('classification_accuracy_LDA_count_no_reg')
 plt.show()
 
