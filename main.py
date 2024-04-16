@@ -2,7 +2,6 @@ import numpy as np
 import seaborn as sns
 import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import mutual_info_regression
@@ -130,8 +129,8 @@ num_colors = len(target['season'].unique())  # Number of unique seasons
 palette = sns.color_palette('bright', n_colors=num_colors)
 
 # Plot the pairplot with updated palette
-#ax = sns.pairplot(df_pair, height=2, aspect=0.7)
-#plt.savefig('pair_plot_no_debug.png')
+ax = sns.pairplot(df_pair, height=2, aspect=0.7)
+plt.savefig('pair_plot_no_debug.png')
 
 # ******************************
 # CORRELATION MATRIX
@@ -142,24 +141,20 @@ cor_eff = df.corr()
 plt.figure(figsize=(9, 9))
 sns.heatmap(cor_eff, linecolor="white", linewidths=1, annot=True)
 plt.savefig("full_corr_matrix")
-#plt.show()
+# plt.show()
 
 # Plot the lower half of the correlation matrix
 fig, ax = plt.subplots(figsize=(9, 9))
-#plt.show()
 
-# Lower correlation matrix not showing up
 # Compute the correlation matrix
 mask = np.zeros_like(cor_eff)
-#plt.show()
 
 # mask = 0: display the correlation matrix
 # mask = 1: display the unique lower triangular values
-#mask[np.triu_indices_from(mask)] = 0
 mask[np.triu_indices_from(mask)] = 1
 sns.heatmap(cor_eff, linecolor="white", linewidths=1, mask=mask, ax=ax, annot=True)
 plt.savefig("lower_corr_matrix")
-plt.show()
+# plt.show()
 
 # Print total of invalid data per column
 print("\nInvalid Data:")
@@ -291,7 +286,11 @@ ax.grid()
 plt.savefig('LDA_scatterplot_count_noreg')
 plt.show()
 
-# Supervised Classification w/o reduction
+# ******************************
+# CLASSIFICATION
+# ******************************
+
+# Supervised Classification
 classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
                      "SVM - Poly": (SVC(kernel="poly", random_state=1), "darkorange"),
                      "SVM - Linear": (SVC(kernel="linear"), "blue"),
@@ -299,7 +298,7 @@ classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
                      "Logistic Regression": (LogisticRegression(max_iter=1000, random_state=1), "red"),
                      "Random Forest": (RandomForestClassifier(random_state=1), "gold"),
                      "kNN": (KNeighborsClassifier(n_neighbors=5), "gray")}
-'''
+
 # **WARNING**, this section of the code can take up to 10 min to run
 fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
                    title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction")
@@ -311,7 +310,7 @@ fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda, y=tar
                    title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction")
 plt.savefig('classification_accuracy_LDA_count')
 plt.show()
-'''
+
 # Without registered and casual
 fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_noreg, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
                    title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction")
@@ -323,6 +322,10 @@ fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda_noreg,
                    title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction")
 plt.savefig('classification_accuracy_LDA_count_no_reg')
 plt.show()
+
+# ******************************
+# SCORING
+# ******************************
 
 # Using classification data, test best classifier
 x_train, x_test, y_train, y_test = train_test_split(x_lda, y_lda, train_size=0.5, random_state=1, shuffle=True)
@@ -377,8 +380,4 @@ for i in range(len(y_test.values)):
 accuracy = (correct_count/len(y_test.values)) * 100
 
 print("Prediction Accuracy: ", round(accuracy, 2), "%")
-
-
-
-
 
