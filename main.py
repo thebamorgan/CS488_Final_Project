@@ -3,7 +3,6 @@ import seaborn as sns
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.linear_model import ElasticNet
-from sklearn.svm import SVR
 from sklearn.linear_model import BayesianRidge
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -212,7 +211,7 @@ df_pair = df.copy()
 # Increase the number of colors in the palette
 num_colors = len(target['season'].unique())  # Number of unique seasons
 palette = sns.color_palette('bright', n_colors=num_colors)
-'''
+
 # Plot the pairplot with updated palette
 ax = sns.pairplot(df_pair, height=2, aspect=0.7)
 plt.savefig('pair_plot_no_debug.png')
@@ -240,7 +239,7 @@ mask[np.triu_indices_from(mask)] = 1
 sns.heatmap(cor_eff, linecolor="white", linewidths=1, mask=mask, ax=ax, annot=True)
 plt.savefig("lower_corr_matrix")
 # plt.show()
-'''
+
 # Print total of invalid data per column
 print("\nInvalid Data:")
 print(df.isna().sum()) # When I ran it everything was zero, good
@@ -301,7 +300,7 @@ plt.barh(width, scores)
 plt.yticks(width, ticks)
 plt.title("Yulu Dataset Mutual Information Scores")
 plt.savefig("mutual_info_scores")
-#plt.show()
+plt.show()
 
 # Assigning X and Y for LDA
 x_lda = df_final
@@ -328,7 +327,7 @@ plt.xticks([1, 2, 3, 4, 5, 6], ld, fontsize=8, rotation=30)
 plt.ylabel('Variance Ratio')
 plt.title('LDA Variance Ratio of Yulu Dataset')
 plt.savefig('LDA_class_variance_count')
-#plt.show()
+plt.show()
 
 # LDA Dimensionality Reduction
 lda = LinearDiscriminantAnalysis(n_components=2)
@@ -338,7 +337,7 @@ x_lda = lda.fit_transform(X=x_lda, y=y_lda)
 plt.clf()
 fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(1, 1, 1)
-ax.set_title('LDA on Yulu Dataset', fontsize=20)
+ax.set_title('LDA on Yulu Dataset with Registered and Casual', fontsize=20)
 class_num = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 colors = ['r', 'b', 'g', 'y', 'orange', 'c', 'k', 'pink', 'brown', 'gray']
 for t, color in zip(class_num, colors):
@@ -350,7 +349,7 @@ ax.legend(['0 to 100', '100 to 200', '200 to 300', '300 to 400', '400 to 500', '
            '800 to 900', '900 to 1000'], title="Number of Bikes Rented")
 ax.grid()
 plt.savefig('LDA_scatterplot_count')
-#plt.show()
+plt.show()
 
 lda = LinearDiscriminantAnalysis(n_components=2)
 x_lda_noreg = lda.fit_transform(X=x_lda_noreg, y=y_lda)
@@ -359,7 +358,7 @@ x_lda_noreg = lda.fit_transform(X=x_lda_noreg, y=y_lda)
 plt.clf()
 fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(1, 1, 1)
-ax.set_title('LDA on Yulu Dataset', fontsize=20)
+ax.set_title('LDA on Yulu Dataset without Registered and Casual', fontsize=20)
 class_num = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 colors = ['r', 'b', 'g', 'y', 'orange', 'c', 'k', 'pink', 'brown', 'gray']
 for t, color in zip(class_num, colors):
@@ -371,7 +370,7 @@ ax.legend(['0 to 100', '100 to 200', '200 to 300', '300 to 400', '400 to 500', '
            '800 to 900', '900 to 1000'], title="Number of Bikes Rented")
 ax.grid()
 plt.savefig('LDA_scatterplot_count_noreg')
-#plt.show()
+plt.show()
 
 # ******************************
 # CLASSIFICATION
@@ -385,7 +384,7 @@ classifier_labels = {"SVM - RBF": (SVC(kernel="rbf", random_state=1), "green"),
                      "Logistic Regression": (LogisticRegression(max_iter=1000, random_state=1), "red"),
                      "Random Forest": (RandomForestClassifier(random_state=1), "gold"),
                      "kNN": (KNeighborsClassifier(n_neighbors=5), "gray")}
-'''
+
 # **WARNING**, this section of the code can take up to 10 min to run
 fig1, normal_scores = plot_learning_curve(est_arr=classifier_labels, X=df_final, y=target['count'], train_sizes=np.linspace(start=0.1, stop=0.5, num=5), cv=5, n_jobs=1,
                    title="Supervised Classification of Yulu Dataset Without Dimensionality Reduction")
@@ -409,7 +408,7 @@ fig3, lda_scores = plot_learning_curve(est_arr=classifier_labels, X=x_lda_noreg,
                    title="Supervised Classification of Yulu Dataset With LDA Dimensionality Reduction")
 plt.savefig('classification_accuracy_LDA_count_no_reg')
 plt.show()
-'''
+
 # ******************************
 # SCORING
 # ******************************
